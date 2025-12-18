@@ -3,8 +3,8 @@ import random
 from datetime import datetime, timedelta
 
 # Define constants
-START_TIME = datetime(2025, 12, 12, 17, 0, 0)  # Start of simulation
-END_TIME = datetime(2025, 12, 12, 18, 0, 0)    # End of simulation
+START_TIME = datetime(2025, 12, 18, 12, 30, 0)  # Start of simulation
+END_TIME = datetime(2025, 12, 18, 13, 30, 0)    # End of simulation
 INTERVAL_SECONDS = 5  # Event frequency
 NUM_MACHINES = 3  # e.g., LINE_01_MOTOR_01 to LINE_03_MOTOR_10 (adjust as needed)
 MACHINES = [f"LINE_{i//10 + 1:02d}_MOTOR_{i%10 + 1:02d}" for i in range(NUM_MACHINES)]
@@ -35,8 +35,7 @@ def generate_event(timestamp, machine_id, sensor_type):
         elif sensor_type == "current":
             value = random.uniform(-5, 0) if random.random() < 0.5 else random.uniform(60, 80)  # Imbalance or spike
         elif sensor_type == "pressure":
-            value = random.uniform(500, 900)  # Low pressure
-        # Add more anomaly logic as needed
+            value = random.uniform(500, 900)
     
     return {
         "timestamp": timestamp.isoformat() + "Z",

@@ -1,6 +1,7 @@
 from kafka import KafkaProducer
 import json
 import time
+from datetime import datetime
 
 # Kafka setup
 producer = KafkaProducer(
@@ -8,24 +9,48 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-# Function to determine topic based on sensor_type
+# Penyesuaian Topik berdasarkan Rancangan Proyek
 def get_topic(sensor_type):
+    # Sesuaikan dengan kunci di SENSORS generator Anda
     if 'vibration' in sensor_type:
         return 'sensor_vibration_stream'
     elif sensor_type in ['current', 'voltage']:
-        return 'electrical_stream'
+        return 'sensor_electrical_stream'
+    elif 'temperature' in sensor_type:
+        return 'sensor_temperature_stream'
+    elif sensor_type == 'pressure':
+        return 'sensor_pressure_stream'
     else:
-        return 'sensor_vibration_stream'  # Default; customize as needed
+        return 'sensor_vibration_stream'
 
-# Read and produce dummy data
-with open('D:/UNIV/S5/PID/iot_motor_project/scripts/data/dummy_sensor_data_fix.jsonl', 'r') as f:
-    for line in f:
-        event = json.loads(line)
-        topic = get_topic(event['sensor_type'])
-        # Use machine_id as key for partitioning (preserves order per machine)
-        producer.send(topic, key=event['machine_id'].encode('utf-8'), value=event)
-        print(f"Sent to {topic}: {event}")
-        time.sleep(0.1)  # Simulate real-time delay (adjust for speed)
+# Simulasi pengiriman data
+path_data = 'D:/UNIV/S5/PID/iot_motor_project/dummy_sensor_data_fix.jsonl'
 
-producer.flush()
-producer.close()
+try:
+    with open(path_data, 'r') as f:
+        for line in f:
+            event = json.loads(line)
+            
+            # Memastikan field wajib ada untuk validasi schema di Consumer [cite: 141]
+            if 'timestamp' not in event:
+                event['timestamp'] = datetime.now().isoformat() + "Z"
+            
+            topic = get_topic(event['sensor_type'])
+            
+            # Pengiriman dengan Key (machine_id) agar ordering terjaga [cite: 109, 121]
+            producer.send(
+                topic, 
+                key=event['machine_id'].encode('utf-8'), 
+                value=event
+            )
+            
+            print(f"Sent to {topic}: {event['machine_id']} - {event['sensor_type']}: {event['value']}")
+            
+            # Jeda 0.1 detik untuk simulasi real-time [cite: 118]
+            time.sleep(0.1) 
+
+except FileNotFoundError:
+    print(f"File tidak ditemukan di: {path_data}")
+finally:
+    producer.flush()
+    producer.close()
